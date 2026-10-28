@@ -135,7 +135,7 @@ docker compose run --rm pki help
 
 The service is called `pki` (the container is typically `<folder>-pki-1`). Use the service name with `docker compose exec`.
 
-Results appear under `data/issued/<fqdn>/`. Usually you install `<fqdn>.fullchain.pem` and `<fqdn>.key.pem` on the device. See [docs/README-pki.md](docs/README-pki.md) for renewal rules (`--force`, `--regen-config`, `--regen-key`).
+Results appear under `data/issued/<fqdn>/`. Usually you install `<fqdn>.fullchain.pem` and `<fqdn>.key.pem` on the device. See [docs/pki.md](docs/pki.md) for renewal rules (`--force`, `--regen-config`, `--regen-key`).
 
 ### Keeping the container running without the dashboard
 
@@ -161,6 +161,6 @@ tar czf pki-backup-$(date +%Y%m%d).tar.gz data/
 | No "Issue" form on the page | `PKI_WEB_ISSUE` is not `true`, or the browser is disabled; check `docker compose logs pki \| grep -i generation` |
 | `service "pki-1" is not running` | Use the service name: `docker compose exec pki ...` |
 | Permission errors on `./data` | Set `PKI_UID` / `PKI_GID` to your user and fix ownership of `./data` |
-| Browser warns about the HTTPS certificate | Trust the root CA on that client (see [docs/README-pki.md](docs/README-pki.md), section 6) |
+| Browser warns about the HTTPS certificate | Trust the root CA on that client (see [docs/pki.md](docs/pki.md), section 6) |
 | Dashboard certificate lacks the host's IP | Set `PKI_WEB_IP`; delete `data/issued/pki.<domain>` and restart to re-issue |
 | Health check | `curl http://<host>:8080/__health.json` |

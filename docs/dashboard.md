@@ -22,9 +22,9 @@ The page behaviour is now:
 
 ```bash
 mkdir -p www
-cp server_certificate_dashboard_tls_aware.html www/index.html
+cp index.html www/index.html
 
-python3 cert_dashboard_server_tls_aware.py \
+python3 cert_dashboard.py \
   --directory ./www \
   --http-port 8080 \
   --https-port 0
