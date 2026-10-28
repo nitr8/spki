@@ -1,0 +1,33 @@
+services:
+  pki:
+    build: .
+    image: kiss-pki:latest
+    # "serve" = dashboard in the foreground (keeps the container running).
+    # Use "idle" instead if you only want a resident container for `exec` work.
+    command: ["serve"]
+    restart: unless-stopped
+    # Run as your host user so files in ./data are owned by you, not root.
+    # Set once:  export PKI_UID=$(id -u) PKI_GID=$(id -g)   (or put them in .env)
+    user: "${PKI_UID:-1000}:${PKI_GID:-1000}"
+    stdin_open: true   # needed for the interactive vi step via `exec`
+    tty: true
+    environment:
+      PKI_WEB_HOST: "${PKI_WEB_HOST:-pki}"
+      PKI_WEB_IP: "${PKI_WEB_IP:-}"      # set to the Docker host's LAN IP
+      PKI_WEB_DNS: "${PKI_WEB_DNS:-}"    # e.g. "pki.lan,certs.acme.test"
+      # Issued-certificate browser (download certs/keys). Disabled unless a password
+      # of at least 12 characters is set. Keep it in a .env file (chmod 600), not in git.
+      PKI_BROWSE_USER: "${PKI_BROWSE_USER:-admin}"
+      PKI_BROWSE_PASSWORD: "${PKI_BROWSE_PASSWORD:-}"
+      # true = allow issuing certificates from the dashboard (runs cert_gen.sh with the
+      # intermediate CA). Requires PKI_BROWSE_PASSWORD. Leave false unless you want it.
+      PKI_WEB_ISSUE: "${PKI_WEB_ISSUE:-false}"
+      PKI_HTTP_PORT: "8080"
+      PKI_HTTPS_PORT: "8443"
+    ports:
+      - "${PKI_HTTP_HOST_PORT:-8080}:8080"
+      - "${PKI_HTTPS_HOST_PORT:-8443}:8443"
+    volumes:
+      - ./pki.env:/app/pki.env:ro
+      - ./data/ca:/app/ca
+      - ./data/issued:/app/issued

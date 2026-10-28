@@ -1,0 +1,2007 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Live Server Certificate Dashboard</title>
+  <style>
+    :root {
+      --bg: #080b16;
+      --panel: rgba(255, 255, 255, 0.08);
+      --panel-2: rgba(255, 255, 255, 0.12);
+      --text: #eef3ff;
+      --muted: #a9b6d3;
+      --line: rgba(255, 255, 255, 0.14);
+      --accent: #7dd3fc;
+      --accent-2: #a78bfa;
+      --good: #34d399;
+      --warn: #fbbf24;
+      --bad: #fb7185;
+      --radius: 22px;
+      --shadow: 0 24px 90px rgba(0, 0, 0, 0.42);
+      --mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace;
+      --sans: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      color: var(--text);
+      font-family: var(--sans);
+      background:
+        radial-gradient(circle at top left, rgba(125, 211, 252, 0.24), transparent 34rem),
+        radial-gradient(circle at top right, rgba(167, 139, 250, 0.22), transparent 34rem),
+        radial-gradient(circle at 50% 100%, rgba(52, 211, 153, 0.10), transparent 30rem),
+        linear-gradient(135deg, #080b16 0%, #11192d 52%, #08111f 100%);
+      line-height: 1.5;
+    }
+
+    .page {
+      width: min(1240px, calc(100% - 36px));
+      margin: 0 auto;
+      padding: 42px 0;
+    }
+
+    .hero {
+      position: relative;
+      overflow: hidden;
+      padding: 34px;
+      border: 1px solid var(--line);
+      border-radius: calc(var(--radius) + 8px);
+      background: linear-gradient(135deg, rgba(255,255,255,.12), rgba(255,255,255,.055));
+      box-shadow: var(--shadow);
+      backdrop-filter: blur(18px);
+    }
+
+    .hero:before {
+      content: "";
+      position: absolute;
+      inset: -2px;
+      background:
+        linear-gradient(120deg, transparent 0%, rgba(125,211,252,.18) 25%, transparent 45%),
+        radial-gradient(circle at 85% 20%, rgba(52,211,153,.16), transparent 18rem);
+      pointer-events: none;
+    }
+
+    .hero-inner {
+      position: relative;
+      display: grid;
+      grid-template-columns: 1.3fr .7fr;
+      gap: 26px;
+      align-items: center;
+    }
+
+    .eyebrow {
+      display: inline-flex;
+      align-items: center;
+      gap: 9px;
+      padding: 7px 11px;
+      border: 1px solid var(--line);
+      border-radius: 999px;
+      color: var(--muted);
+      background: rgba(255,255,255,.055);
+      font-size: 13px;
+      letter-spacing: .02em;
+    }
+
+    .dot {
+      width: 9px;
+      height: 9px;
+      border-radius: 999px;
+      background: var(--warn);
+      box-shadow: 0 0 22px var(--warn);
+    }
+
+    h1 {
+      margin: 18px 0 8px;
+      font-size: clamp(34px, 5vw, 70px);
+      line-height: .95;
+      letter-spacing: -0.055em;
+    }
+
+    .subtitle {
+      max-width: 760px;
+      margin: 0;
+      color: var(--muted);
+      font-size: 17px;
+    }
+
+    .status-card {
+      justify-self: end;
+      width: min(100%, 350px);
+      padding: 22px;
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      background: rgba(3, 7, 18, .34);
+    }
+
+    .status-label {
+      color: var(--muted);
+      font-size: 13px;
+      text-transform: uppercase;
+      letter-spacing: .1em;
+    }
+
+    .status-value {
+      margin-top: 6px;
+      font-size: 36px;
+      font-weight: 850;
+      letter-spacing: -0.04em;
+    }
+
+    .progress {
+      height: 10px;
+      margin-top: 16px;
+      overflow: hidden;
+      border-radius: 999px;
+      background: rgba(255,255,255,.11);
+    }
+
+    .progress > span {
+      display: block;
+      height: 100%;
+      width: 0%;
+      background: linear-gradient(90deg, var(--good), var(--accent), var(--accent-2));
+      border-radius: inherit;
+      transition: width .6s ease;
+    }
+
+    .meta-line {
+      margin-top: 12px;
+      color: var(--muted);
+      font-size: 13px;
+    }
+
+    .toolbar {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin-top: 18px;
+    }
+
+    button {
+      appearance: none;
+      border: 1px solid rgba(125, 211, 252, .35);
+      border-radius: 999px;
+      padding: 10px 14px;
+      color: #e0f7ff;
+      background: rgba(125, 211, 252, .12);
+      font-weight: 800;
+      cursor: pointer;
+      transition: transform .18s ease, background .18s ease;
+    }
+
+    button:hover {
+      transform: translateY(-1px);
+      background: rgba(125, 211, 252, .18);
+    }
+
+    .btn {
+      display: inline-block;
+      border: 1px solid rgba(125, 211, 252, .35);
+      border-radius: 999px;
+      padding: 10px 14px;
+      color: #e0f7ff;
+      background: rgba(125, 211, 252, .12);
+      font-weight: 800;
+      text-decoration: none;
+      transition: transform .18s ease, background .18s ease;
+    }
+
+    .btn:hover {
+      transform: translateY(-1px);
+      background: rgba(125, 211, 252, .18);
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(12, 1fr);
+      gap: 18px;
+      margin-top: 18px;
+    }
+
+    .card {
+      padding: 22px;
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      background: var(--panel);
+      box-shadow: 0 14px 50px rgba(0,0,0,.16);
+      backdrop-filter: blur(14px);
+      min-width: 0;
+    }
+
+    .span-4 { grid-column: span 4; }
+    .span-5 { grid-column: span 5; }
+    .span-6 { grid-column: span 6; }
+    .span-7 { grid-column: span 7; }
+    .span-8 { grid-column: span 8; }
+    .span-12 { grid-column: span 12; }
+
+    .card h2 {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      margin: 0 0 16px;
+      font-size: 16px;
+      letter-spacing: .01em;
+    }
+
+    .small {
+      color: var(--muted);
+      font-size: 12px;
+      font-weight: 600;
+    }
+
+    .kv {
+      display: grid;
+      gap: 12px;
+    }
+
+    .item {
+      display: grid;
+      grid-template-columns: 170px minmax(0, 1fr);
+      gap: 14px;
+      padding-bottom: 12px;
+      border-bottom: 1px solid rgba(255,255,255,.09);
+    }
+
+    .item:last-child {
+      padding-bottom: 0;
+      border-bottom: 0;
+    }
+
+    .key {
+      color: var(--muted);
+      font-size: 13px;
+    }
+
+    .value {
+      min-width: 0;
+      overflow-wrap: anywhere;
+      font-weight: 650;
+    }
+
+    .mono {
+      font-family: var(--mono);
+      font-size: 12px;
+      font-weight: 500;
+    }
+
+    .pill-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 9px;
+    }
+
+    .pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 7px;
+      padding: 8px 10px;
+      border: 1px solid rgba(125, 211, 252, .28);
+      border-radius: 999px;
+      background: rgba(125, 211, 252, .09);
+      color: #dff7ff;
+      font-family: var(--mono);
+      font-size: 12px;
+      white-space: nowrap;
+    }
+
+    .pill.ip {
+      border-color: rgba(167, 139, 250, .28);
+      background: rgba(167, 139, 250, .10);
+    }
+
+    .badge {
+      display: inline-flex;
+      padding: 5px 8px;
+      border-radius: 999px;
+      font-size: 12px;
+      font-weight: 850;
+      letter-spacing: .02em;
+      white-space: nowrap;
+    }
+
+    .badge.good { color: #052e1f; background: var(--good); }
+    .badge.warn { color: #3f2d00; background: var(--warn); }
+    .badge.bad { color: #3f0714; background: var(--bad); }
+    .badge.info { color: #082f49; background: var(--accent); }
+
+    .fingerprint {
+      display: block;
+      padding: 14px;
+      border: 1px solid rgba(255,255,255,.11);
+      border-radius: 14px;
+      background: rgba(0,0,0,.18);
+      color: #dbeafe;
+      font-family: var(--mono);
+      font-size: 12px;
+      line-height: 1.65;
+      word-break: break-all;
+    }
+
+    .timeline {
+      position: relative;
+      display: grid;
+      gap: 12px;
+      padding-left: 20px;
+    }
+
+    .timeline:before {
+      content: "";
+      position: absolute;
+      left: 5px;
+      top: 8px;
+      bottom: 8px;
+      width: 2px;
+      border-radius: 999px;
+      background: linear-gradient(var(--accent), var(--accent-2));
+    }
+
+    .tl-item {
+      position: relative;
+      padding: 12px 14px;
+      border: 1px solid rgba(255,255,255,.1);
+      border-radius: 15px;
+      background: rgba(255,255,255,.055);
+    }
+
+    .tl-item:before {
+      content: "";
+      position: absolute;
+      left: -20px;
+      top: 18px;
+      width: 12px;
+      height: 12px;
+      border-radius: 999px;
+      background: var(--accent);
+      box-shadow: 0 0 22px rgba(125,211,252,.8);
+    }
+
+    .tl-title {
+      color: var(--muted);
+      font-size: 12px;
+      text-transform: uppercase;
+      letter-spacing: .09em;
+    }
+
+    .tl-date {
+      margin-top: 3px;
+      font-weight: 850;
+    }
+
+    .table-wrap {
+      overflow: auto;
+      border: 1px solid rgba(255,255,255,.1);
+      border-radius: 15px;
+      background: rgba(0,0,0,.14);
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-family: var(--mono);
+      font-size: 12px;
+    }
+
+    th, td {
+      padding: 10px 12px;
+      border-bottom: 1px solid rgba(255,255,255,.08);
+      text-align: left;
+      vertical-align: top;
+    }
+
+    th {
+      color: var(--muted);
+      font-family: var(--sans);
+      font-size: 12px;
+      text-transform: uppercase;
+      letter-spacing: .08em;
+      background: rgba(255,255,255,.045);
+    }
+
+    tr:last-child td { border-bottom: 0; }
+
+    td:first-child {
+      color: #dff7ff;
+      white-space: nowrap;
+      font-weight: 800;
+    }
+
+    details {
+      border: 1px solid rgba(255,255,255,.1);
+      border-radius: 15px;
+      background: rgba(0,0,0,.16);
+      overflow: hidden;
+    }
+
+    summary {
+      cursor: pointer;
+      padding: 15px 16px;
+      color: var(--text);
+      font-weight: 850;
+      user-select: none;
+    }
+
+    pre {
+      margin: 0;
+      padding: 16px;
+      overflow: auto;
+      border-top: 1px solid rgba(255,255,255,.09);
+      color: #d8e5ff;
+      font-family: var(--mono);
+      font-size: 12px;
+      line-height: 1.6;
+      white-space: pre-wrap;
+      word-break: break-word;
+    }
+
+
+    .hero-notice-card {
+      position: absolute;
+      left: 0;
+      right: 0;
+      bottom: -18px;
+      z-index: 5;
+      display: flex;
+      justify-content: center;
+      pointer-events: none;
+    }
+
+    .hero-notice {
+      max-width: min(760px, calc(100% - 24px));
+      padding: 9px 13px;
+      border: 1px solid rgba(251, 191, 36, .35);
+      border-radius: 999px;
+      background: rgba(11, 16, 32, .78);
+      color: #fde68a;
+      font-size: 12px;
+      font-weight: 750;
+      letter-spacing: .01em;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      box-shadow: 0 12px 36px rgba(0,0,0,.28);
+      backdrop-filter: blur(14px);
+    }
+
+    .hero-notice.good {
+      border-color: rgba(52, 211, 153, .38);
+      color: #bbf7d0;
+      background: rgba(6, 78, 59, .58);
+    }
+
+
+
+    .upload-zone {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 14px;
+      margin-bottom: 14px;
+    }
+
+    .upload-box {
+      padding: 16px;
+      border: 1px dashed rgba(125, 211, 252, .32);
+      border-radius: 16px;
+      background: rgba(0,0,0,.12);
+    }
+
+    .upload-box label {
+      display: block;
+      margin-bottom: 8px;
+      color: var(--muted);
+      font-size: 12px;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: .08em;
+    }
+
+    .upload-box input[type="file"],
+    .upload-box input[type="password"] {
+      width: 100%;
+      color: var(--text);
+      font-family: var(--mono);
+      font-size: 12px;
+    }
+
+    .upload-box input[type="password"] {
+      padding: 10px 11px;
+      border: 1px solid rgba(255,255,255,.16);
+      border-radius: 12px;
+      outline: none;
+      background: rgba(3, 7, 18, .42);
+    }
+
+    .upload-box input[type="text"],
+    .upload-box input[type="number"] {
+      width: 100%;
+      padding: 10px 11px;
+      border: 1px solid rgba(255,255,255,.16);
+      border-radius: 12px;
+      outline: none;
+      background: rgba(3, 7, 18, .42);
+      color: var(--text);
+      font-family: var(--mono);
+      font-size: 12px;
+    }
+
+    .upload-box label.check {
+      display: flex;
+      align-items: flex-start;
+      gap: 8px;
+      margin: 6px 0;
+      color: var(--text);
+      font-size: 12px;
+      font-weight: 600;
+      text-transform: none;
+      letter-spacing: 0;
+    }
+
+    .upload-help {
+      margin-top: 8px;
+      color: var(--muted);
+      font-size: 12px;
+    }
+
+    .upload-result-grid {
+      display: grid;
+      grid-template-columns: repeat(12, 1fr);
+      gap: 14px;
+      margin-top: 14px;
+    }
+
+    .mini-card {
+      grid-column: span 12;
+      padding: 16px;
+      border: 1px solid rgba(255,255,255,.10);
+      border-radius: 16px;
+      background: rgba(0,0,0,.12);
+      min-width: 0;
+    }
+
+    .mini-card h3 {
+      margin: 0 0 12px;
+      font-size: 14px;
+      letter-spacing: .01em;
+    }
+
+    .mini-card.half {
+      grid-column: span 6;
+    }
+
+    @media (max-width: 980px) {
+      .upload-zone {
+        grid-template-columns: 1fr;
+      }
+
+      .mini-card.half {
+        grid-column: span 12;
+      }
+    }
+
+    .footer a {
+      color: var(--accent);
+      text-decoration: none;
+      border-bottom: 1px solid rgba(125, 211, 252, .35);
+    }
+
+    .footer a:hover {
+      color: #e0f7ff;
+      border-bottom-color: rgba(224, 247, 255, .75);
+    }
+
+    @media (max-width: 980px) {
+      .hero-notice-card {
+        bottom: -20px;
+      }
+
+      .hero-notice {
+        max-width: calc(100% - 16px);
+      }
+    }
+
+    .notice {
+      padding: 14px 16px;
+      border: 1px solid rgba(251, 191, 36, .35);
+      border-radius: 15px;
+      background: rgba(251, 191, 36, .09);
+      color: #fde68a;
+      font-size: 13px;
+    }
+
+    .notice.good {
+      border-color: rgba(52, 211, 153, .35);
+      background: rgba(52, 211, 153, .09);
+      color: #bbf7d0;
+    }
+
+    [data-cert-section].hidden-cert-section {
+      display: none !important;
+    }
+
+
+    [data-tls-section].hidden-tls-section {
+      display: none !important;
+    }
+
+    [data-raw-diagnostics-section].hidden-raw-diagnostics-section {
+      display: none !important;
+    }
+
+    /* Debug panels: hidden until the bug icon is selected (HTTPS only). */
+    body:not(.debug-on) [data-debug-section] {
+      display: none !important;
+    }
+
+    .icon-btn {
+      width: 38px;
+      height: 38px;
+      padding: 0;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 999px;
+      opacity: .65;
+    }
+
+    .icon-btn:hover,
+    .icon-btn[aria-pressed="true"] {
+      opacity: 1;
+    }
+
+    .icon-btn[aria-pressed="true"] {
+      border-color: var(--accent);
+      box-shadow: 0 0 0 2px rgba(125, 211, 252, .25);
+    }
+
+    .icon-btn svg {
+      width: 18px;
+      height: 18px;
+      fill: none;
+      stroke: currentColor;
+      stroke-width: 1.8;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+    }
+
+    .footer {
+      margin-top: 22px;
+      color: var(--muted);
+      text-align: center;
+      font-size: 12px;
+    }
+
+    @media (max-width: 980px) {
+      .hero-inner { grid-template-columns: 1fr; }
+      .status-card { justify-self: stretch; width: 100%; }
+      .span-4, .span-5, .span-6, .span-7, .span-8 { grid-column: span 12; }
+      .item { grid-template-columns: 1fr; gap: 3px; }
+    }
+
+    @media print {
+      :root {
+        --text: #111827;
+        --muted: #4b5563;
+        --line: #d1d5db;
+        --panel: #fff;
+      }
+      body { background: #fff; color: #111827; }
+      .page { width: 100%; padding: 0; }
+      .hero, .card { box-shadow: none; backdrop-filter: none; break-inside: avoid; }
+      .hero:before, .toolbar { display: none; }
+      .fingerprint, pre, .table-wrap { background: #f8fafc; color: #111827; }
+    }
+  </style>
+</head>
+
+<body>
+  <main class="page">
+    <section class="hero">
+      <div class="hero-inner">
+        <div>
+          <div class="eyebrow"><span class="dot" id="statusDot"></span><span id="eyebrowText">Loading certificate status…</span></div>
+          <h1 id="pageTitle">Server Certificate</h1>
+          <p class="subtitle" id="subtitle">Live certificate and HTTP header dashboard served by this web server.</p>
+          <div class="toolbar">
+            <button onclick="loadEverything()">Refresh live data</button>
+            <button id="copyCertJsonButton" onclick="copyJson()">Copy certificate JSON</button>
+            <button id="debugToggle" class="icon-btn" data-cert-section type="button" onclick="toggleDebug()"
+                    aria-pressed="false" aria-label="Show debug details" title="Show debug details">
+              <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 8a4 4 0 0 1 8 0"/><rect x="7" y="8" width="10" height="12" rx="5"/><path d="M12 8v12M3 13h4M17 13h4M4 6l3 2.5M20 6l-3 2.5M4 20l3-2.5M20 20l-3-2.5"/></svg>
+            </button>
+          </div>
+        </div>
+
+        <aside class="status-card" id="certStatusCard" data-cert-section>
+          <div class="status-label">Validity remaining</div>
+          <div class="status-value" id="daysRemaining">—</div>
+          <div class="progress"><span id="validityProgress"></span></div>
+          <div class="meta-line" id="validityMeta">Waiting for certificate endpoint…</div>
+        </aside>
+
+        <div class="hero-notice-card" id="endpointNoticeCard" style="display:none;">
+          <div class="hero-notice" id="endpointNotice"></div>
+        </div>
+      </div>
+    </section>
+
+    <section class="grid">
+      <article data-debug-section data-cert-section class="card span-8">
+        <h2>Identity <span class="small" id="certSource">source: fallback</span></h2>
+        <div class="kv">
+          <div class="item"><div class="key">Common Name</div><div class="value mono" id="commonName">—</div></div>
+          <div class="item"><div class="key">Subject</div><div class="value mono" id="subject">—</div></div>
+          <div class="item"><div class="key">Issuer</div><div class="value mono" id="issuer">—</div></div>
+          <div class="item"><div class="key">Serial Number</div><div class="value mono" id="serial">—</div></div>
+        </div>
+      </article>
+
+      <article data-debug-section data-cert-section class="card span-4">
+        <h2>Crypto</h2>
+        <div class="kv">
+          <div class="item"><div class="key">Public Key</div><div class="value mono" id="publicKey">—</div></div>
+          <div class="item"><div class="key">Signature</div><div class="value mono" id="signatureAlgorithm">—</div></div>
+          <div class="item"><div class="key">Version</div><div class="value mono" id="version">—</div></div>
+          <div class="item"><div class="key">CA Certificate</div><div class="value mono" id="isCA">—</div></div>
+        </div>
+      </article>
+
+      <article data-debug-section data-cert-section class="card span-6">
+        <h2>Subject Alternative Names</h2>
+        <div class="pill-row" id="sanList"></div>
+      </article>
+
+      <article data-debug-section data-cert-section class="card span-6">
+        <h2>Validity Timeline</h2>
+        <div class="timeline">
+          <div class="tl-item">
+            <div class="tl-title">Not Before</div>
+            <div class="tl-date" id="notBefore">—</div>
+          </div>
+          <div class="tl-item">
+            <div class="tl-title">Not After</div>
+            <div class="tl-date" id="notAfter">—</div>
+          </div>
+        </div>
+      </article>
+
+      <article data-debug-section data-cert-section class="card span-12">
+        <h2>Fingerprints</h2>
+        <div class="kv">
+          <div class="item">
+            <div class="key">SHA-256</div>
+            <code class="fingerprint" id="sha256">—</code>
+          </div>
+          <div class="item">
+            <div class="key">SHA-1</div>
+            <code class="fingerprint" id="sha1">—</code>
+          </div>
+        </div>
+      </article>
+
+      <article data-debug-section data-cert-section class="card span-6">
+        <h2>Key Usage</h2>
+        <div class="pill-row" id="keyUsage"></div>
+      </article>
+
+      <article data-debug-section data-cert-section class="card span-6">
+        <h2>Extended Key Usage</h2>
+        <div class="pill-row" id="extendedKeyUsage"></div>
+      </article>
+
+      <article class="card span-12" id="rootCaCard">
+        <h2>Trust this CA <span class="small">root certificate for clients</span></h2>
+        <div class="toolbar" style="margin-top:0;">
+          <a class="btn" href="/root-ca.cert.pem" download>Download root CA (.pem)</a>
+          <a class="btn" href="/root-ca.crt" download>Download root CA (.crt, Windows)</a>
+        </div>
+        <div class="kv" style="margin-top:16px;">
+          <div class="item">
+            <div class="key">Root CA SHA-256</div>
+            <code class="fingerprint" id="rootCaFingerprint">loading…</code>
+          </div>
+        </div>
+        <div class="upload-help">
+          This file is downloaded over a connection your device does not trust yet. Compare the fingerprint above
+          with the downloaded file (command below) before installing it.
+        </div>
+        <div class="upload-help" style="margin-top:14px;">
+          <strong>Install only the root on clients.</strong> The files below are for applications or devices that
+          explicitly ask for the intermediate or a CA bundle. Servers already present the intermediate to clients
+          inside their <code>fullchain.pem</code>.
+        </div>
+        <div class="toolbar">
+          <a class="btn" href="/ca-chain.pem" download>CA bundle (intermediate + root, .pem)</a>
+          <a class="btn" href="/intermediate-ca.cert.pem" download>Intermediate CA (.pem)</a>
+          <a class="btn" href="/intermediate-ca.crt" download>Intermediate CA (.crt)</a>
+        </div>
+        <div class="kv" style="margin-top:16px;">
+          <div class="item">
+            <div class="key">Intermediate CA SHA-256</div>
+            <code class="fingerprint" id="intermediateCaFingerprint">loading…</code>
+          </div>
+        </div>
+        <details style="margin-top:14px;">
+          <summary>Verify and install commands</summary>
+          <pre id="rootCaCommands">—</pre>
+        </details>
+      </article>
+
+      <article data-cert-section class="card span-12" id="issuedCard">
+        <h2>Issued Certificates <span class="small">download certificates and keys · HTTPS + password required</span></h2>
+        <div class="toolbar" style="margin-top:0;">
+          <button id="issuedLoadButton" onclick="loadIssued()">Browse issued certificates</button>
+          <input id="issuedFilter" type="search" placeholder="Filter hosts…" oninput="renderIssued()"
+                 style="padding:10px 14px;border:1px solid rgba(255,255,255,.16);border-radius:999px;background:rgba(3,7,18,.42);color:var(--text);font-family:var(--mono);font-size:12px;min-width:220px;outline:none;">
+        </div>
+        <div id="issuedNotice" class="notice" style="display:none;margin-top:14px;"></div>
+        <details id="issueBox" style="display:none;margin-top:14px;">
+          <summary>Issue or renew a certificate</summary>
+          <div style="padding:16px;border-top:1px solid rgba(255,255,255,.09);">
+            <div class="upload-zone">
+              <div class="upload-box">
+                <label for="issueHost">Hostname</label>
+                <input id="issueHost" type="text" autocomplete="off" placeholder="nas  or  nas.acme.test">
+                <div class="upload-help">A short name gets the default domain from pki.env appended.</div>
+              </div>
+
+              <div class="upload-box">
+                <label for="issueIps">IP addresses</label>
+                <input id="issueIps" type="text" autocomplete="off" placeholder="192.168.1.10, 192.168.1.11">
+                <div class="upload-help">Comma or space separated. If empty, DEFAULT_IP from pki.env is used, which is only a placeholder.</div>
+              </div>
+
+              <div class="upload-box">
+                <label for="issueDns">Extra DNS names</label>
+                <input id="issueDns" type="text" autocomplete="off" placeholder="files.acme.test, nas-01.acme.test">
+                <div class="upload-help">Added as subject alternative names next to the hostname. Wildcards are not supported.</div>
+              </div>
+
+              <div class="upload-box">
+                <label for="issueDomain">Domain override (optional)</label>
+                <input id="issueDomain" type="text" autocomplete="off" placeholder="lab.acme.test">
+                <label for="issueDays" style="margin-top:12px;">Valid for days (optional)</label>
+                <input id="issueDays" type="number" min="1" max="3650" placeholder="825">
+              </div>
+
+              <div class="upload-box">
+                <label>Options</label>
+                <label class="check"><input id="issueForce" type="checkbox"> Renew / overwrite an existing certificate (--force)</label>
+                <label class="check"><input id="issueRegenConfig" type="checkbox"> Rebuild the OpenSSL config from these names (--regen-config)</label>
+                <label class="check"><input id="issueRegenKey" type="checkbox"> Create a new private key (--regen-key)</label>
+              </div>
+
+              <div class="upload-box">
+                <label>Actions</label>
+                <div class="toolbar" style="margin-top:0;">
+                  <button id="issueButton" onclick="submitIssue()">Generate certificate</button>
+                </div>
+                <div class="upload-help" id="issueStatus">Runs cert_gen.sh on the server and signs with the intermediate CA.</div>
+              </div>
+            </div>
+            <pre id="issueOutput" style="display:none;border:1px solid rgba(255,255,255,.1);border-radius:15px;"></pre>
+          </div>
+        </details>
+        <div id="issueDisabledHint" class="upload-help" style="display:none;">
+          Generating certificates from this page is disabled. Start the container with PKI_WEB_ISSUE=true to enable it.
+        </div>
+        <div id="issuedList" style="display:grid;gap:14px;margin-top:14px;"></div>
+        <div class="upload-help">
+          Private keys are marked "secret". The browser stays signed in until you close it; there is no log-out for HTTP Basic login.
+        </div>
+      </article>
+
+      <article data-debug-section data-cert-section class="card span-12">
+        <h2>HTTP / HTTPS Request Context <span class="small" id="requestGeneratedAt">—</span></h2>
+        <div class="kv">
+          <div class="item"><div class="key">Page URL</div><div class="value mono" id="pageUrl">—</div></div>
+          <div class="item"><div class="key">Protocol</div><div class="value mono" id="pageProtocol">—</div></div>
+          <div class="item"><div class="key">Host</div><div class="value mono" id="pageHost">—</div></div>
+          <div class="item"><div class="key">User Agent</div><div class="value mono" id="userAgent">—</div></div>
+        </div>
+      </article>
+
+
+      <article data-debug-section data-tls-section class="card span-12">
+        <h2>TLS Session Details <span class="small">live from /__tls.json</span></h2>
+        <div class="grid" style="margin-top:0;">
+          <div class="card span-6" style="box-shadow:none;background:rgba(0,0,0,.10);">
+            <h2>Negotiated Connection</h2>
+            <div class="table-wrap">
+              <table>
+                <thead><tr><th>Item</th><th>Value</th></tr></thead>
+                <tbody id="tlsConnectionTable"></tbody>
+              </table>
+            </div>
+          </div>
+
+          <div class="card span-6" style="box-shadow:none;background:rgba(0,0,0,.10);">
+            <h2>Runtime / Server Context</h2>
+            <div class="table-wrap">
+              <table>
+                <thead><tr><th>Item</th><th>Value</th></tr></thead>
+                <tbody id="tlsRuntimeTable"></tbody>
+              </table>
+            </div>
+          </div>
+
+          <div class="card span-12" style="box-shadow:none;background:rgba(0,0,0,.10);">
+            <h2>Shared Cipher Snapshot <span class="small">if exposed by Python/OpenSSL</span></h2>
+            <div class="table-wrap">
+              <table>
+                <thead><tr><th>#</th><th>Cipher</th><th>Protocol</th><th>Bits</th></tr></thead>
+                <tbody id="tlsSharedCiphersTable"></tbody>
+              </table>
+            </div>
+          </div>
+
+          </div>
+      </article>
+
+      <article data-debug-section data-cert-section class="card span-6">
+        <h2>Headers Received by Server <span class="small">echo from /__headers.json</span></h2>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>Header</th><th>Value</th></tr></thead>
+            <tbody id="requestHeadersTable"></tbody>
+          </table>
+        </div>
+      </article>
+
+      <article data-debug-section data-cert-section class="card span-6">
+        <h2>Headers Received by Browser <span class="small">from fetch responses</span></h2>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>Header</th><th>Value</th></tr></thead>
+            <tbody id="responseHeadersTable"></tbody>
+          </table>
+        </div>
+      </article>
+
+  
+
+      <article class="card span-12">
+        <h2>Uploaded Certificate / Key Inspector <span class="small">local files parsed by /__upload_inspect.json</span></h2>
+
+        <div class="upload-zone">
+          <div class="upload-box">
+            <label for="uploadCertFile">Certificate or chain file</label>
+            <input id="uploadCertFile" type="file" accept=".pem,.crt,.cer,.cert,.chain,.txt,.der,application/x-x509-ca-cert,application/pkix-cert">
+            <div class="upload-help">PEM or DER. Chain files are supported; each certificate block is inspected.</div>
+          </div>
+
+          <div class="upload-box">
+            <label for="uploadKeyFile">Private key file</label>
+            <input id="uploadKeyFile" type="file" accept=".pem,.key,.txt">
+            <div class="upload-help">RSA, EC or other OpenSSL-supported PEM keys. Encrypted keys can use the optional passphrase.</div>
+          </div>
+
+          <div class="upload-box">
+            <label for="uploadKeyPassphrase">Private key passphrase</label>
+            <input id="uploadKeyPassphrase" type="password" autocomplete="off" placeholder="optional">
+            <div class="upload-help">Only sent to this local server for this inspection request. It is not stored.</div>
+          </div>
+
+          <div class="upload-box">
+            <label>Actions</label>
+            <div class="toolbar" style="margin-top:0;">
+              <button onclick="inspectUploadedFiles()">Inspect uploaded file(s)</button>
+              <button onclick="clearUploadInspector()">Clear upload results</button>
+            </div>
+            <div class="upload-help">The running server certificate remains unchanged.</div>
+          </div>
+        </div>
+
+        <div id="uploadInspectorNotice" class="notice" style="display:none;"></div>
+
+        <div class="upload-result-grid" id="uploadResultGrid" style="display:none;">
+          <div class="mini-card" id="uploadMatchCard" style="display:none;">
+            <h3>Certificate / Key Match</h3>
+            <div class="table-wrap"><table><thead><tr><th>Item</th><th>Value</th></tr></thead><tbody id="uploadMatchTable"></tbody></table></div>
+          </div>
+
+          <div class="mini-card half" id="uploadCertSummaryCard" style="display:none;">
+            <h3>Uploaded Certificate Summary</h3>
+            <div class="table-wrap"><table><thead><tr><th>Item</th><th>Value</th></tr></thead><tbody id="uploadCertSummaryTable"></tbody></table></div>
+          </div>
+
+          <div class="mini-card half" id="uploadKeySummaryCard" style="display:none;">
+            <h3>Uploaded Key Summary</h3>
+            <div class="table-wrap"><table><thead><tr><th>Item</th><th>Value</th></tr></thead><tbody id="uploadKeySummaryTable"></tbody></table></div>
+          </div>
+
+          <div class="mini-card" id="uploadCertsCard" style="display:none;">
+            <h3>Uploaded Certificate Chain / Certificates</h3>
+            <div class="table-wrap">
+              <table>
+                <thead><tr><th>#</th><th>Common Name</th><th>Issuer</th><th>Expires</th><th>SHA-256</th></tr></thead>
+                <tbody id="uploadCertsTable"></tbody>
+              </table>
+            </div>
+          </div>
+
+          <div class="mini-card">
+            <h3>Uploaded Inspection JSON</h3>
+            <details>
+              <summary>Show / hide</summary>
+              <pre id="uploadRawJson">—</pre>
+            </details>
+          </div>
+        </div>
+      </article>
+
+      <article data-debug-section data-raw-diagnostics-section class="card span-12">
+        <h2>RAW Data Diagnostics <span class="small">PEM, certificate parser output and TLS endpoint payloads</span></h2>
+
+        <div class="grid" style="margin-top:0;">
+          <div class="card span-12" style="box-shadow:none;background:rgba(0,0,0,.10);">
+            <h2>PEM Certificate</h2>
+            <details>
+              <summary>Show / hide</summary>
+              <pre id="pemBlock">—</pre>
+            </details>
+          </div>
+
+          <div class="card span-12" style="box-shadow:none;background:rgba(0,0,0,.10);">
+            <h2>Certificate JSON returned by the server</h2>
+            <details>
+              <summary>Show / hide</summary>
+              <pre id="rawJson">—</pre>
+            </details>
+          </div>
+
+          <div class="card span-12" style="box-shadow:none;background:rgba(0,0,0,.10);">
+            <h2>TLS JSON returned by the server</h2>
+            <details>
+              <summary>Show / hide</summary>
+              <pre id="rawTlsJson">—</pre>
+            </details>
+          </div>
+        </div>
+      </article>
+
+    </section>
+
+    <div data-cert-section class="footer">
+      Static HTML + live JSON endpoints · Certificate endpoint: <a href="/__certinfo.json"><code>/__certinfo.json</code></a> · TLS endpoint: <a href="/__tls.json"><code>/__tls.json</code></a> · Header endpoint: <a href="/__headers.json"><code>/__headers.json</code></a> · Upload inspector: <a href="/__upload_inspect.json"><code>/__upload_inspect.json</code></a><br>
+      Documentation: <a href="/docs/pki.html" target="_blank" rel="noopener"> PKI</a> · <a href="/docs/dashboard.html" target="_blank" rel="noopener">Dashboard</a> . <a href="/docs/container.html" target="_blank" rel="noopener">Container</a> 
+    </div>
+  </main>
+
+  <script>
+    const CERTIFICATE_FALLBACK = {
+      ok: false,
+      pageTitle: "Server Certificate",
+      subtitle: "Fallback/demo certificate data. Start the fixed companion Python server to load live details.",
+      commonName: "demo.local",
+      subject: "CN=demo.local, O=Example, C=CH",
+      issuer: "CN=Example Intermediate CA, O=Example, C=CH",
+      serialNumber: "00:00:DE:MO",
+      version: "X.509 v3",
+      publicKey: "RSA 2048-bit",
+      signatureAlgorithm: "sha256WithRSAEncryption",
+      isCA: false,
+      notBefore: "2026-01-01T00:00:00Z",
+      notAfter: "2027-01-01T00:00:00Z",
+      subjectAlternativeNames: ["DNS:demo.local", "IP:127.0.0.1"],
+      keyUsage: ["Digital Signature", "Key Encipherment"],
+      extendedKeyUsage: ["TLS Web Server Authentication"],
+      fingerprints: {
+        sha256: "START-THE-SERVER-TO-LOAD-LIVE-SHA256-FINGERPRINT",
+        sha1: "START-THE-SERVER-TO-LOAD-LIVE-SHA1-FINGERPRINT"
+      },
+      pem: "-----BEGIN CERTIFICATE-----\nSTART-THE-SERVER-TO-LOAD-LIVE-PEM\n-----END CERTIFICATE-----",
+      diagnostics: ["fallback object rendered by browser"]
+    };
+
+    let currentCertificate = CERTIFICATE_FALLBACK;
+    const el = (id) => document.getElementById(id);
+
+    function formatDate(iso) {
+      if (!iso) return "—";
+      const date = new Date(iso);
+      if (Number.isNaN(date.getTime())) return String(iso);
+      return date.toLocaleString(undefined, {
+        year: "numeric",
+        month: "short",
+        day: "2-digit",
+        hour: "2-digit",
+        minute: "2-digit",
+        timeZoneName: "short"
+      });
+    }
+
+    function clearAndAddPills(containerId, values) {
+      const container = el(containerId);
+      container.innerHTML = "";
+
+      if (!values || values.length === 0) {
+        const empty = document.createElement("span");
+        empty.className = "pill";
+        empty.textContent = "none reported";
+        container.appendChild(empty);
+        return;
+      }
+
+      values.forEach((value) => {
+        const pill = document.createElement("span");
+        pill.className = "pill" + (String(value).startsWith("IP:") ? " ip" : "");
+        pill.textContent = value;
+        container.appendChild(pill);
+      });
+    }
+
+    function updateValidity(cert) {
+      const start = new Date(cert.notBefore);
+      const end = new Date(cert.notAfter);
+      const now = new Date();
+
+      if (Number.isNaN(start.getTime()) || Number.isNaN(end.getTime())) {
+        el("daysRemaining").textContent = "—";
+        el("validityMeta").textContent = "Validity dates unavailable";
+        el("validityProgress").style.width = "0%";
+        return;
+      }
+
+      const totalMs = end - start;
+      const elapsedMs = now - start;
+      const remainingMs = end - now;
+      const days = Math.ceil(remainingMs / 86400000);
+
+      let status = "Valid";
+      let badgeClass = "good";
+      let dotColor = "var(--good)";
+
+      if (now < start) {
+        status = "Not yet valid";
+        badgeClass = "warn";
+        dotColor = "var(--warn)";
+      } else if (now > end) {
+        status = "Expired";
+        badgeClass = "bad";
+        dotColor = "var(--bad)";
+      } else if (days <= 30) {
+        status = "Expiring soon";
+        badgeClass = "warn";
+        dotColor = "var(--warn)";
+      }
+
+      const progress = totalMs > 0 ? Math.max(0, Math.min(100, (elapsedMs / totalMs) * 100)) : 0;
+      el("validityProgress").style.width = `${progress}%`;
+      el("daysRemaining").textContent = now > end ? "Expired" : `${Math.max(0, days)} days`;
+      el("validityMeta").innerHTML = `<span class="badge ${badgeClass}">${status}</span> · expires ${formatDate(cert.notAfter)}`;
+      el("eyebrowText").textContent = `Certificate status · ${status}`;
+      el("statusDot").style.background = dotColor;
+      el("statusDot").style.boxShadow = `0 0 22px ${dotColor}`;
+    }
+
+    function renderCertificate(cert, sourceLabel) {
+      currentCertificate = cert;
+
+      el("pageTitle").textContent = cert.pageTitle || cert.commonName || "Server Certificate";
+      document.title = `${cert.pageTitle || cert.commonName || "Server Certificate"} · Certificate Dashboard`;
+      el("subtitle").textContent = cert.subtitle || "Live certificate and HTTP header dashboard.";
+      el("certSource").textContent = `source: ${sourceLabel || cert.source || "unknown"}`;
+
+      el("commonName").textContent = cert.commonName || "—";
+      el("subject").textContent = cert.subject || "—";
+      el("issuer").textContent = cert.issuer || "—";
+      el("serial").textContent = cert.serialNumber || "—";
+      el("publicKey").textContent = cert.publicKey || "—";
+      el("signatureAlgorithm").textContent = cert.signatureAlgorithm || "—";
+      el("version").textContent = cert.version || "—";
+      el("isCA").textContent = cert.isCA === true ? "Yes" : cert.isCA === false ? "No" : "—";
+      el("notBefore").textContent = formatDate(cert.notBefore);
+      el("notAfter").textContent = formatDate(cert.notAfter);
+      el("sha256").textContent = cert.fingerprints?.sha256 || "—";
+      el("sha1").textContent = cert.fingerprints?.sha1 || "—";
+      el("pemBlock").textContent = cert.pem || "—";
+      el("rawJson").textContent = JSON.stringify(cert, null, 2);
+
+      clearAndAddPills("sanList", cert.subjectAlternativeNames || []);
+      clearAndAddPills("keyUsage", cert.keyUsage || []);
+      clearAndAddPills("extendedKeyUsage", cert.extendedKeyUsage || []);
+      updateValidity(cert);
+    }
+
+    function renderRequestContext(headersData) {
+      el("pageUrl").textContent = location.href;
+      el("pageProtocol").textContent = location.protocol.replace(":", "").toUpperCase();
+      el("pageHost").textContent = location.host;
+      el("userAgent").textContent = navigator.userAgent;
+      el("requestGeneratedAt").textContent = headersData?.generatedAt ? `generated: ${formatDate(headersData.generatedAt)}` : "local browser context";
+
+      if (headersData?.request) {
+        const req = headersData.request;
+        const extra = {
+          "Request Method": req.method,
+          "Request Path": req.path,
+          "HTTP Version": req.protocolVersion,
+          "Client Address": req.clientAddress,
+          "TLS": req.tls ? "yes" : "no"
+        };
+        renderTable("requestHeadersTable", { ...extra, ...(headersData.requestHeaders || {}) });
+      } else {
+        renderTable("requestHeadersTable", {
+          "Endpoint": "Unavailable",
+          "Reason": "The server did not provide /__headers.json"
+        });
+      }
+    }
+
+    function renderTable(tableId, data) {
+      const tbody = el(tableId);
+      tbody.innerHTML = "";
+
+      const entries = Object.entries(data || {});
+      if (entries.length === 0) {
+        const row = document.createElement("tr");
+        row.innerHTML = "<td>—</td><td>no data</td>";
+        tbody.appendChild(row);
+        return;
+      }
+
+      for (const [key, value] of entries) {
+        const row = document.createElement("tr");
+        const k = document.createElement("td");
+        const v = document.createElement("td");
+        k.textContent = key;
+        v.textContent = Array.isArray(value) ? value.join(", ") : String(value ?? "");
+        row.appendChild(k);
+        row.appendChild(v);
+        tbody.appendChild(row);
+      }
+    }
+
+    function headersToObject(headers) {
+      const obj = {};
+      headers.forEach((value, key) => obj[key] = value);
+      return obj;
+    }
+
+    function setNotice(message, good = false) {
+      const card = el("endpointNoticeCard");
+      const box = el("endpointNotice");
+      if (!message) {
+        card.style.display = "none";
+        box.textContent = "";
+        box.className = "hero-notice";
+        return;
+      }
+      card.style.display = "";
+      box.textContent = message;
+      box.className = good ? "hero-notice good" : "hero-notice";
+    }
+
+    async function fetchJsonWithHeaders(url, options = {}) {
+      const response = await fetch(url, {
+        cache: "no-store",
+        headers: {
+          "Accept": "application/json",
+          "X-Cert-Dashboard": "true",
+          ...options.headers
+        },
+        ...options
+      });
+
+      const responseHeaders = headersToObject(response.headers);
+      const text = await response.text();
+
+      let data;
+      try {
+        data = JSON.parse(text);
+      } catch (err) {
+        throw new Error(`Endpoint returned non-JSON response from ${url}: ${text.slice(0, 200)}`);
+      }
+
+      return { data, responseHeaders, ok: response.ok, status: response.status };
+    }
+
+
+    function setDebugMode(on) {
+      document.body.classList.toggle("debug-on", on);
+      const button = el("debugToggle");
+      if (button) {
+        button.setAttribute("aria-pressed", on ? "true" : "false");
+        const label = on ? "Hide debug details" : "Show debug details";
+        button.setAttribute("aria-label", label);
+        button.title = label;
+      }
+      try { sessionStorage.setItem("pkiDebug", on ? "1" : "0"); } catch (err) { /* storage unavailable */ }
+    }
+
+    function toggleDebug() {
+      setDebugMode(!document.body.classList.contains("debug-on"));
+    }
+
+    function initDebugMode() {
+      let on = false;
+      try { on = sessionStorage.getItem("pkiDebug") === "1"; } catch (err) { /* storage unavailable */ }
+      setDebugMode(on);
+    }
+
+    function isHttpsPage() {
+      return location.protocol === "https:";
+    }
+
+    function setCertificatePanelsVisible(visible) {
+      document.querySelectorAll("[data-cert-section]").forEach((node) => {
+        node.classList.toggle("hidden-cert-section", !visible);
+      });
+
+      const copyButton = el("copyCertJsonButton");
+      if (copyButton) {
+        copyButton.style.display = visible ? "" : "none";
+      }
+    }
+
+    function enterHeaderOnlyMode(reason = "HTTP mode detected. Certificate/TLS panels are hidden because this page is not being served over HTTPS.") {
+      setCertificatePanelsVisible(false);
+      setTlsPanelsVisible(false);
+      setRawDiagnosticsVisible(false);
+
+      el("pageTitle").textContent = "HTTP Header Dashboard";
+      document.title = "HTTP Header Dashboard";
+      el("subtitle").textContent = "Header-only mode. Browse over HTTPS to display server certificate information.";
+      el("eyebrowText").textContent = "HTTP mode · header-only";
+      el("statusDot").style.background = "var(--accent)";
+      el("statusDot").style.boxShadow = "0 0 22px var(--accent)";
+
+      setNotice(reason, true);
+    }
+
+    function enterHttpsCertificateMode() {
+      setCertificatePanelsVisible(true);
+      setTlsPanelsVisible(true);
+      setRawDiagnosticsVisible(true);
+    }
+
+
+    function setTlsPanelsVisible(visible) {
+      document.querySelectorAll("[data-tls-section]").forEach((node) => {
+        node.classList.toggle("hidden-tls-section", !visible);
+      });
+    }
+
+    function setRawDiagnosticsVisible(visible) {
+      document.querySelectorAll("[data-raw-diagnostics-section]").forEach((node) => {
+        node.classList.toggle("hidden-raw-diagnostics-section", !visible);
+      });
+    }
+
+    function renderRows(tableId, rows, emptyMessage = "no data") {
+      const tbody = el(tableId);
+      tbody.innerHTML = "";
+
+      if (!rows || rows.length === 0) {
+        const row = document.createElement("tr");
+        row.innerHTML = `<td>—</td><td colspan="3">${emptyMessage}</td>`;
+        tbody.appendChild(row);
+        return;
+      }
+
+      for (const rowData of rows) {
+        const row = document.createElement("tr");
+        for (const cell of rowData) {
+          const td = document.createElement("td");
+          td.textContent = String(cell ?? "");
+          row.appendChild(td);
+        }
+        tbody.appendChild(row);
+      }
+    }
+
+    function renderTlsInfo(tlsData) {
+      el("rawTlsJson").textContent = JSON.stringify(tlsData || {}, null, 2);
+
+      if (!tlsData || tlsData.ok !== true) {
+        renderTable("tlsConnectionTable", {
+          "TLS endpoint": "unavailable",
+          "Reason": tlsData?.error || "No TLS data returned"
+        });
+        renderTable("tlsRuntimeTable", {});
+        renderRows("tlsSharedCiphersTable", [], "no shared cipher data");
+        return;
+      }
+
+      const tls = tlsData.tls || {};
+      const cipher = tls.cipher || {};
+      const clientCert = tlsData.clientCertificate || {};
+      const remote = tlsData.remote || {};
+      const local = tlsData.local || {};
+      const runtime = tlsData.runtime || {};
+      const serverConfig = tlsData.serverConfig || {};
+
+      renderTable("tlsConnectionTable", {
+        "TLS active": tls.enabled ? "yes" : "no",
+        "Negotiated protocol": tls.protocolVersion || "unavailable",
+        "Cipher": cipher.name || "unavailable",
+        "Cipher protocol": cipher.protocol || "unavailable",
+        "Cipher secret bits": cipher.secretBits ?? "unavailable",
+        "Compression": tls.compression || "none",
+        "ALPN protocol": tls.alpnProtocol || "none",
+        "NPN protocol": tls.npnProtocol || "none",
+        "Client certificate": clientCert.present ? "present" : "not presented",
+        "Remote peer": `${remote.address || "?"}:${remote.port || "?"}`,
+        "Local socket": `${local.address || "?"}:${local.port || "?"}`
+      });
+
+      renderTable("tlsRuntimeTable", {
+        "Python ssl module": runtime.pythonSsl || "unavailable",
+        "OpenSSL version": runtime.opensslVersion || "unavailable",
+        "OpenSSL version info": runtime.opensslVersionInfo || "unavailable",
+        "SNI callback used": serverConfig.sniCallbackUsed ? "yes" : "no",
+        "Configured min TLS": serverConfig.minimumTlsVersion || "unavailable",
+        "Configured cert": serverConfig.certPath || "unavailable",
+        "Configured key": serverConfig.keyPath || "unavailable",
+        "Channel binding available": tls.channelBinding?.available ? "yes" : "no",
+        "Channel binding length": tls.channelBinding?.length ?? "unavailable"
+      });
+
+      const shared = tls.sharedCiphers || [];
+      const rows = shared.slice(0, 40).map((entry, idx) => {
+        if (Array.isArray(entry)) {
+          return [idx + 1, entry[0] || "", entry[1] || "", entry[2] || ""];
+        }
+        return [idx + 1, entry.name || "", entry.protocol || "", entry.bits || ""];
+      });
+      renderRows("tlsSharedCiphersTable", rows, "shared ciphers not exposed for this request/runtime");
+    }
+
+    async function loadEverything() {
+      setNotice("");
+      renderRequestContext(null);
+      renderTable("responseHeadersTable", { "Status": "Loading…" });
+
+      let responseHeadersCombined = {};
+
+      if (isHttpsPage()) {
+        enterHttpsCertificateMode();
+
+        try {
+          const certResult = await fetchJsonWithHeaders("/__certinfo.json");
+
+          if (certResult.data?.ok === true) {
+            renderCertificate(certResult.data, "live /__certinfo.json");
+            setNotice("Live HTTPS certificate data loaded successfully.", true);
+          } else {
+            renderCertificate(CERTIFICATE_FALLBACK, "fallback");
+            el("rawJson").textContent = JSON.stringify(certResult.data, null, 2);
+            setNotice(`Certificate endpoint answered, but reported a parser/config problem. See Raw JSON / Parser Diagnostics below.`);
+          }
+
+          responseHeadersCombined = {
+            ...responseHeadersCombined,
+            ...Object.fromEntries(Object.entries(certResult.responseHeaders).map(([k, v]) => [`cert:${k}`, v]))
+          };
+        } catch (err) {
+          renderCertificate(CERTIFICATE_FALLBACK, "fallback");
+          setNotice(`Live certificate endpoint unavailable. Using fallback values. Details: ${err.message}`);
+        }
+      } else {
+        enterHeaderOnlyMode();
+        responseHeadersCombined = {
+          ...responseHeadersCombined,
+          "cert:skipped": "HTTP page detected; certificate lookup skipped"
+        };
+      }
+
+
+      if (isHttpsPage()) {
+        try {
+          const tlsResult = await fetchJsonWithHeaders("/__tls.json", {
+            headers: {
+              "X-Demo-TLS-Probe": "true"
+            }
+          });
+
+          renderTlsInfo(tlsResult.data);
+
+          responseHeadersCombined = {
+            ...responseHeadersCombined,
+            ...Object.fromEntries(Object.entries(tlsResult.responseHeaders).map(([k, v]) => [`tls:${k}`, v]))
+          };
+        } catch (err) {
+          renderTlsInfo({ ok: false, error: err.message });
+          setNotice((el("endpointNotice").textContent ? el("endpointNotice").textContent + " " : "") + `TLS endpoint unavailable. Details: ${err.message}`);
+        }
+      } else {
+        renderTlsInfo({ ok: false, error: "HTTP page detected; TLS lookup skipped." });
+        responseHeadersCombined = {
+          ...responseHeadersCombined,
+          "tls:skipped": "HTTP page detected; TLS lookup skipped"
+        };
+      }
+
+      try {
+        const headersResult = await fetchJsonWithHeaders("/__headers.json", {
+          headers: {
+            "X-Demo-Sent-By": "certificate-dashboard-html",
+            "X-Demo-Purpose": "show-headers-received-by-server"
+          }
+        });
+        renderRequestContext(headersResult.data);
+        responseHeadersCombined = {
+          ...responseHeadersCombined,
+          ...Object.fromEntries(Object.entries(headersResult.responseHeaders).map(([k, v]) => [`headers:${k}`, v]))
+        };
+      } catch (err) {
+        renderRequestContext(null);
+        setNotice((el("endpointNotice").textContent ? el("endpointNotice").textContent + " " : "") + `Header endpoint unavailable. Details: ${err.message}`);
+      }
+
+      try {
+        const htmlProbe = await fetch(location.href, {
+          cache: "no-store",
+          headers: { "X-Demo-Probe": "html-response-headers" }
+        });
+        const htmlHeaders = headersToObject(htmlProbe.headers);
+        responseHeadersCombined = {
+          ...responseHeadersCombined,
+          ...Object.fromEntries(Object.entries(htmlHeaders).map(([k, v]) => [`html:${k}`, v]))
+        };
+      } catch (_) {
+        responseHeadersCombined = {
+          ...responseHeadersCombined,
+          "html:probe": "unavailable"
+        };
+      }
+
+      renderTable("responseHeadersTable", responseHeadersCombined);
+    }
+
+
+    function setUploadNotice(message, good = false) {
+      const box = el("uploadInspectorNotice");
+      if (!box) return;
+      if (!message) {
+        box.style.display = "none";
+        box.textContent = "";
+        box.className = "notice";
+        return;
+      }
+      box.style.display = "";
+      box.textContent = message;
+      box.className = good ? "notice good" : "notice";
+    }
+
+    function clearUploadInspector() {
+      el("uploadCertFile").value = "";
+      el("uploadKeyFile").value = "";
+      el("uploadKeyPassphrase").value = "";
+      el("uploadRawJson").textContent = "—";
+      el("uploadResultGrid").style.display = "none";
+      el("uploadMatchCard").style.display = "none";
+      el("uploadCertSummaryCard").style.display = "none";
+      el("uploadKeySummaryCard").style.display = "none";
+      el("uploadCertsCard").style.display = "none";
+      setUploadNotice("");
+      renderTable("uploadMatchTable", {});
+      renderTable("uploadCertSummaryTable", {});
+      renderTable("uploadKeySummaryTable", {});
+      renderRows("uploadCertsTable", [], "no uploaded certificates");
+    }
+
+    function shortFingerprint(value) {
+      if (!value) return "—";
+      if (value.length <= 35) return value;
+      return `${value.slice(0, 23)}…${value.slice(-11)}`;
+    }
+
+    function renderUploadInspection(data) {
+      el("uploadResultGrid").style.display = "";
+      el("uploadRawJson").textContent = JSON.stringify(data || {}, null, 2);
+
+      const certs = data?.certificates || [];
+      const key = data?.key || null;
+      const match = data?.match || null;
+
+      if (match) {
+        el("uploadMatchCard").style.display = "";
+        renderTable("uploadMatchTable", {
+          "Compared": match.compared ? "yes" : "no",
+          "Certificate and key match": match.matches === true ? "yes" : match.matches === false ? "no" : "not available",
+          "Certificate public key SHA-256": match.certificatePublicKeySha256 || "unavailable",
+          "Private key public key SHA-256": match.privateKeyPublicKeySha256 || "unavailable",
+          "Reason": match.reason || "—"
+        });
+      } else {
+        el("uploadMatchCard").style.display = "none";
+      }
+
+      if (certs.length > 0) {
+        const first = certs[0];
+        el("uploadCertSummaryCard").style.display = "";
+        renderTable("uploadCertSummaryTable", {
+          "Uploaded file": data.uploads?.certificateFileName || "certificate upload",
+          "Certificates found": certs.length,
+          "First certificate CN": first.commonName || "—",
+          "Issuer": first.issuer || "—",
+          "Serial": first.serialNumber || "—",
+          "Not before": formatDate(first.notBefore),
+          "Not after": formatDate(first.notAfter),
+          "Public key": first.publicKey || "—",
+          "Signature": first.signatureAlgorithm || "—",
+          "SAN count": first.subjectAlternativeNames?.length ?? 0
+        });
+
+        el("uploadCertsCard").style.display = "";
+        renderRows("uploadCertsTable", certs.map((cert, idx) => [
+          idx + 1,
+          cert.commonName || "—",
+          cert.issuer || "—",
+          formatDate(cert.notAfter),
+          shortFingerprint(cert.fingerprints?.sha256)
+        ]));
+      } else {
+        el("uploadCertSummaryCard").style.display = "none";
+        el("uploadCertsCard").style.display = "none";
+      }
+
+      if (key) {
+        el("uploadKeySummaryCard").style.display = "";
+        renderTable("uploadKeySummaryTable", {
+          "Uploaded file": data.uploads?.keyFileName || "key upload",
+          "Parsed": key.ok ? "yes" : "no",
+          "Encrypted": key.encrypted ? "yes" : "no / not detected",
+          "Key type": key.keyType || "unavailable",
+          "Key size": key.keySize || "unavailable",
+          "Public key SHA-256": key.publicKeySha256 || "unavailable",
+          "Error": key.error || "—",
+          "Hint": key.hint || "—"
+        });
+      } else {
+        el("uploadKeySummaryCard").style.display = "none";
+      }
+
+      if (data?.ok === true) {
+        setUploadNotice("Uploaded file inspection completed successfully.", true);
+      } else if (data?.key?.hint) {
+        setUploadNotice(data.key.hint);
+      } else {
+        setUploadNotice(data?.error || "Uploaded file inspection completed with warnings.");
+      }
+    }
+
+    async function inspectUploadedFiles() {
+      const certFile = el("uploadCertFile").files[0];
+      const keyFile = el("uploadKeyFile").files[0];
+      const passphrase = el("uploadKeyPassphrase").value || "";
+
+      if (!certFile && !keyFile) {
+        setUploadNotice("Choose a certificate and/or private key file first.");
+        return;
+      }
+
+      const form = new FormData();
+      if (certFile) form.append("certificate", certFile, certFile.name);
+      if (keyFile) form.append("privateKey", keyFile, keyFile.name);
+      if (passphrase) form.append("passphrase", passphrase);
+
+      setUploadNotice("Inspecting uploaded file(s)…");
+      el("uploadResultGrid").style.display = "none";
+
+      try {
+        const response = await fetch("/__upload_inspect.json", {
+          method: "POST",
+          body: form,
+          cache: "no-store",
+          headers: { "X-Cert-Dashboard-Upload": "true" }
+        });
+
+        const text = await response.text();
+        let data;
+        try { data = JSON.parse(text); }
+        catch { throw new Error(`Upload endpoint returned non-JSON response: ${text.slice(0, 200)}`); }
+        renderUploadInspection(data);
+      } catch (err) {
+        setUploadNotice(`Upload inspection failed: ${err.message}`);
+      }
+    }
+
+    async function copyJson() {
+      const text = JSON.stringify(currentCertificate, null, 2);
+      try {
+        await navigator.clipboard.writeText(text);
+        setNotice("Certificate JSON copied to clipboard.", true);
+      } catch {
+        setNotice("Clipboard write failed. Open the Raw JSON section and copy it manually.");
+      }
+    }
+
+    if (isHttpsPage()) {
+      renderCertificate(CERTIFICATE_FALLBACK, "fallback");
+      setTlsPanelsVisible(true);
+      setRawDiagnosticsVisible(true);
+    } else {
+      enterHeaderOnlyMode();
+    }
+    async function loadRootCa() {
+      const origin = location.origin;
+      el("rootCaCommands").textContent = [
+        "# Download (-k because this CA is not trusted yet)",
+        `curl -kO ${origin}/root-ca.cert.pem`,
+        "",
+        "# Verify: must match the SHA-256 shown above",
+        "openssl x509 -in root-ca.cert.pem -noout -fingerprint -sha256",
+        "",
+        "# macOS",
+        "sudo security add-trusted-cert -d -r trustRoot -k /Library/Keychains/System.keychain root-ca.cert.pem",
+        "",
+        "# Windows (PowerShell as Administrator)",
+        "certutil -addstore -f Root root-ca.cert.pem",
+        "",
+        "# Debian / Ubuntu",
+        "sudo cp root-ca.cert.pem /usr/local/share/ca-certificates/acme-root-ca.crt && sudo update-ca-certificates",
+        "",
+        "# Only if an application asks for a CA bundle (e.g. curl --cacert, Python requests, Node NODE_EXTRA_CA_CERTS)",
+        `curl -kO ${origin}/ca-chain.pem`,
+        "curl --cacert ca-chain.pem https://nas.acme.test/"
+      ].join("\n");
+
+      try {
+        const response = await fetch("/root-ca.sha256.txt", { cache: "no-store" });
+        if (!response.ok) throw new Error(`HTTP ${response.status}`);
+        el("rootCaFingerprint").textContent = (await response.text()).trim() || "unavailable";
+      } catch (err) {
+        el("rootCaFingerprint").textContent = "not published (root CA files are only published when started with: serve)";
+      }
+
+      try {
+        const response = await fetch("/intermediate-ca.sha256.txt", { cache: "no-store" });
+        if (!response.ok) throw new Error(`HTTP ${response.status}`);
+        el("intermediateCaFingerprint").textContent = (await response.text()).trim() || "unavailable";
+      } catch (err) {
+        el("intermediateCaFingerprint").textContent = "not published";
+      }
+    }
+
+    let issuedData = null;
+
+    function setIssuedNotice(message, good = false) {
+      const box = el("issuedNotice");
+      if (!message) {
+        box.style.display = "none";
+        box.textContent = "";
+        box.className = "notice";
+        return;
+      }
+      box.style.display = "";
+      box.textContent = message;
+      box.className = good ? "notice good" : "notice";
+    }
+
+    function formatBytes(n) {
+      if (n < 1024) return `${n} B`;
+      return `${(n / 1024).toFixed(1)} KiB`;
+    }
+
+    function issuedCell(text) {
+      const td = document.createElement("td");
+      td.textContent = text;
+      return td;
+    }
+
+    function buildIssuedHost(host) {
+      const card = document.createElement("div");
+      card.className = "mini-card";
+
+      const title = document.createElement("h3");
+      title.textContent = host.name;
+      card.appendChild(title);
+
+      const cert = host.certificate || {};
+      if (cert.notAfter) {
+        const days = Math.ceil((new Date(cert.notAfter) - new Date()) / 86400000);
+        const badge = document.createElement("span");
+        badge.className = "badge " + (days < 0 ? "bad" : days <= 30 ? "warn" : "good");
+        badge.style.marginLeft = "10px";
+        badge.textContent = days < 0 ? "expired" : `${days} days left`;
+        title.appendChild(badge);
+      }
+
+      if (cert.subjectAlternativeNames && cert.subjectAlternativeNames.length) {
+        const pills = document.createElement("div");
+        pills.className = "pill-row";
+        pills.style.marginBottom = "12px";
+        cert.subjectAlternativeNames.forEach((san) => {
+          const pill = document.createElement("span");
+          pill.className = "pill" + (String(san).startsWith("IP:") ? " ip" : "");
+          pill.textContent = san;
+          pills.appendChild(pill);
+        });
+        card.appendChild(pills);
+      }
+
+      const wrap = document.createElement("div");
+      wrap.className = "table-wrap";
+      const table = document.createElement("table");
+      table.innerHTML = "<thead><tr><th>File</th><th>Type</th><th>Size</th><th>Modified</th><th></th></tr></thead>";
+      const tbody = document.createElement("tbody");
+
+      host.files.forEach((file) => {
+        const row = document.createElement("tr");
+        row.appendChild(issuedCell(file.name));
+
+        const kindCell = issuedCell(file.kind);
+        if (file.sensitive) {
+          const badge = document.createElement("span");
+          badge.className = "badge warn";
+          badge.style.marginLeft = "8px";
+          badge.textContent = "secret";
+          kindCell.appendChild(badge);
+        }
+        row.appendChild(kindCell);
+
+        row.appendChild(issuedCell(formatBytes(file.size)));
+        row.appendChild(issuedCell(formatDate(file.modified)));
+
+        const action = document.createElement("td");
+        const link = document.createElement("a");
+        link.className = "btn";
+        link.textContent = "Download";
+        link.href = `/__issued/${encodeURIComponent(host.name)}/${encodeURIComponent(file.name)}`;
+        link.setAttribute("download", file.name);
+        action.appendChild(link);
+        row.appendChild(action);
+
+        tbody.appendChild(row);
+      });
+
+      table.appendChild(tbody);
+      wrap.appendChild(table);
+      card.appendChild(wrap);
+
+      const toolbar = document.createElement("div");
+      toolbar.className = "toolbar";
+      const zip = document.createElement("a");
+      zip.className = "btn";
+      zip.textContent = "Download all as .zip";
+      zip.href = `/__issued/${encodeURIComponent(host.name)}.zip`;
+      zip.setAttribute("download", `${host.name}.zip`);
+      toolbar.appendChild(zip);
+      card.appendChild(toolbar);
+
+      return card;
+    }
+
+    function renderIssued() {
+      const list = el("issuedList");
+      list.innerHTML = "";
+      if (!issuedData) return;
+
+      const needle = (el("issuedFilter").value || "").trim().toLowerCase();
+      const hosts = (issuedData.hosts || []).filter((h) => !needle || h.name.toLowerCase().includes(needle));
+
+      if (hosts.length === 0) {
+        list.textContent = (issuedData.hosts || []).length ? "No hosts match the filter." : "No certificates have been issued yet.";
+        return;
+      }
+      hosts.forEach((host) => list.appendChild(buildIssuedHost(host)));
+    }
+
+    async function loadIssued(silent = false) {
+      if (!silent) setIssuedNotice("Loading… your browser will ask for the browse credentials.", true);
+      try {
+        const response = await fetch("/__issued.json", { cache: "no-store", credentials: "same-origin" });
+        if (response.status === 401) {
+          setIssuedNotice("Authentication failed or cancelled.");
+          return;
+        }
+        const data = await response.json();
+        if (!response.ok || data.ok !== true) {
+          setIssuedNotice(data.error || `Request failed (HTTP ${response.status})`);
+          return;
+        }
+        issuedData = data;
+        setIssuedNotice("");
+        renderIssued();
+      } catch (err) {
+        setIssuedNotice(`Could not load the issued list: ${err.message}`);
+      }
+    }
+
+    function setIssueStatus(message, good) {
+      const box = el("issueStatus");
+      box.textContent = message;
+      box.style.color = good === true ? "#bbf7d0" : good === false ? "#fde68a" : "";
+    }
+
+    async function submitIssue() {
+      const hostname = el("issueHost").value.trim();
+      if (!hostname) {
+        setIssueStatus("Enter a hostname first.", false);
+        return;
+      }
+
+      const body = {
+        hostname,
+        ips: el("issueIps").value,
+        dns: el("issueDns").value,
+        domain: el("issueDomain").value.trim(),
+        force: el("issueForce").checked,
+        regenConfig: el("issueRegenConfig").checked,
+        regenKey: el("issueRegenKey").checked
+      };
+      const days = el("issueDays").value.trim();
+      if (days) body.days = Number(days);
+
+      if ((body.force || body.regenKey) &&
+          !confirm("This overwrites existing certificate files for this host" +
+                   (body.regenKey ? " and replaces its private key (the old key is backed up)" : "") + ". Continue?")) {
+        return;
+      }
+
+      const button = el("issueButton");
+      button.disabled = true;
+      setIssueStatus("Running cert_gen.sh…");
+      try {
+        const response = await fetch("/__issue.json", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(body),
+          cache: "no-store",
+          credentials: "same-origin"
+        });
+        if (response.status === 401) {
+          setIssueStatus("Authentication failed or cancelled.", false);
+          return;
+        }
+        const data = await response.json();
+
+        const output = el("issueOutput");
+        if (data.output) {
+          output.textContent = data.output;
+          output.style.display = "";
+        } else {
+          output.style.display = "none";
+        }
+
+        if (data.ok === true) {
+          setIssueStatus(`Certificate generated${data.fqdn ? " for " + data.fqdn : ""}.`, true);
+          loadIssued(true);
+        } else {
+          setIssueStatus(data.error || `cert_gen.sh failed (exit code ${data.exitCode ?? "?"}). See the output below.`, false);
+        }
+      } catch (err) {
+        setIssueStatus(`Request failed: ${err.message}`, false);
+      } finally {
+        button.disabled = false;
+      }
+    }
+
+    async function initIssuedCard() {
+      const button = el("issuedLoadButton");
+      if (!isHttpsPage()) {
+        button.disabled = true;
+        setIssuedNotice("Open this page over HTTPS to browse issued certificates. Private keys are never served over plain HTTP.");
+        return;
+      }
+      try {
+        const response = await fetch("/__health.json", { cache: "no-store" });
+        const health = await response.json();
+        if (!health.issuedBrowserEnabled) {
+          button.disabled = true;
+          setIssuedNotice("The issued-certificate browser is disabled. Start the container with PKI_BROWSE_PASSWORD set (at least 12 characters).");
+        } else if (health.certIssueEnabled) {
+          el("issueBox").style.display = "";
+        } else {
+          el("issueDisabledHint").style.display = "";
+        }
+      } catch (_) {
+        /* leave the button enabled; loadIssued() reports the real error */
+      }
+    }
+
+    renderRequestContext(null);
+    loadEverything();
+    loadRootCa();
+    initDebugMode();
+    initIssuedCard();
+  </script>
+</body>
+</html>
