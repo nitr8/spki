@@ -1,6 +1,6 @@
-# Home KISS PKI in Docker
+# KISS PKI in Docker
 
-A small home PKI (Root CA → Intermediate CA → server certificates) packaged as a container, together with a Python dashboard that serves the root CA for download, shows certificate/TLS details, and (optionally) lets you browse, download and issue certificates from the browser.
+A small PKI (Root CA → Intermediate CA → server certificates) packaged as a container, together with a Python dashboard that serves the root CA for download, shows certificate/TLS details, and (optionally) lets you browse, download and issue certificates from the browser.
 
 ## Documentation
 

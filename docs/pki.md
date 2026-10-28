@@ -1,4 +1,4 @@
-# Home KISS PKI - Root CA + Intermediate CA
+# KISS PKI - Root CA + Intermediate CA
 
 This is a very small home PKI using plain OpenSSL and shell scripts.
 
